@@ -158,80 +158,14 @@ void can_set_forwarding(uint8_t from, uint8_t to) {
 }
 #endif
 
-void ignition_can_hook(const CANPacket_t *msg) {
-  int len = GET_LEN(msg);
-
-  if (msg->bus == 0U) {
-    int len = GET_LEN(msg);
-
-    // GM exception
-    if ((msg->addr == 0x1F1U) && (len == 8)) {
-      // SystemPowerMode (2=Run, 3=Crank Request)
-      ignition_can = (msg->data[0] & 0x2U) != 0U;
-      ignition_can_cnt = 0U;
-    }
-
-    // Rivian R1S/T GEN1 exception
-    if ((msg->addr == 0x152U) && (len == 8)) {
-      // 0x152 overlaps with Subaru pre-global which has this bit as the high beam
-      int counter = msg->data[1] & 0xFU;  // max is only 14
-
-      static int prev_counter_rivian = -1;
-      if ((counter == ((prev_counter_rivian + 1) % 15)) && (prev_counter_rivian != -1)) {
-        // VDM_OutputSignals->VDM_EpasPowerMode
-        ignition_can = ((msg->data[7] >> 4U) & 0x3U) == 1U;  // VDM_EpasPowerMode_Drive_On=1
-        ignition_can_cnt = 0U;
-      }
-      prev_counter_rivian = counter;
-    }
-
-    // Tesla Model 3/Y exception
-    if ((msg->addr == 0x221U) && (len == 8)) {
-      // 0x221 overlaps with Rivian which has random data on byte 0
-      int counter = msg->data[6] >> 4;
-
-      static int prev_counter_tesla = -1;
-      if ((counter == ((prev_counter_tesla + 1) % 16)) && (prev_counter_tesla != -1)) {
-        // VCFRONT_LVPowerState->VCFRONT_vehiclePowerState
-        int power_state = (msg->data[0] >> 5U) & 0x3U;
-        ignition_can = power_state == 0x3;  // VEHICLE_POWER_STATE_DRIVE=3
-        ignition_can_cnt = 0U;
-      }
-      prev_counter_tesla = counter;
-    }
-
-    // Mazda exception
-    if ((msg->addr == 0x9EU) && (len == 8)) {
-      ignition_can = (msg->data[0] >> 5) == 0x6U;
-      ignition_can_cnt = 0U;
-    }
-
-    // Volkswagen MEB exception
-    if ((msg->addr == 0x3C0U) && (len == 4)) {
-      ignition_can = GET_BIT(msg, 17U);
-      ignition_can_cnt = 0U;
-    }
-  }
-
-  // Tesla Model S exception
-  if (((msg->bus == 0) || (msg->bus == 1)) && (msg->addr == 0x348U) && (len == 8)) {
-     int counter = msg->data[6] & 0xFU;
-
-     static int prev_counter_tesla_legacy = -1;
-     if ((counter == ((prev_counter_tesla_legacy + 1) % 16)) && (prev_counter_tesla_legacy != -1)) {
-       // GTW_status
-       ignition_can = (msg->data[0] & 0x1U) != 0U;
-       ignition_can_cnt = 0U;
-     }
-     prev_counter_tesla_legacy = counter;
- }
-
-  // body exception
-  if (((msg->bus == 0U) || (msg->bus == 2U)) && (msg->addr == 0x201U)) {
-    ignition_can = true;
-    ignition_can_cnt = 0U;
-  }
-}
+// xnor: ignition_can_hook itself now lives in opendbc/safety/ignition.h (included
+// above) - the opendbc_repo resync (commit 4bd93c02) already carries this fork's
+// Tesla Model S GTW_status exception plus a debounced VW MEB case and a body-v2
+// exception deliberately left disabled (conflicts with Tesla's own 0x222/0x201 CAN
+// IDs) that this file's own copy was missing. Redefining it here was a straight
+// ODR violation caught by the real scons build (arm-none-eabi-gcc, redefinition of
+// 'ignition_can_hook') - this file used to be its only home before ignition
+// detection got centralized into opendbc's safety layer upstream.
 
 bool can_tx_check_min_slots_free(uint32_t min) {
   return
