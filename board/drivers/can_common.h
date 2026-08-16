@@ -1,4 +1,5 @@
 #include "board/drivers/drivers.h"
+#include "opendbc/safety/ignition.h"
 
 uint32_t safety_tx_blocked = 0;
 uint32_t safety_rx_invalid = 0;
@@ -6,10 +7,6 @@ uint32_t tx_buffer_overflow = 0;
 uint32_t rx_buffer_overflow = 0;
 
 can_health_t can_health[PANDA_CAN_CNT] = {{0}, {0}, {0}};
-
-// Ignition detected from CAN meessages
-bool ignition_can = false;
-uint32_t ignition_can_cnt = 0U;
 
 bool can_silent = true;
 bool can_loopback = false;
@@ -20,8 +17,14 @@ bool can_loopback = false;
   extern can_ring can_##x; \
   can_ring can_##x = { .w_ptr = 0, .r_ptr = 0, .fifo_size = (size), .elems = (CANPacket_t *)&(elems_##x) };
 
+#ifdef STM32F4
+// CANPacket_t is 72B with CAN FD; the H7 depths would exceed F4 RAM
+#define CAN_RX_BUFFER_SIZE 512U
+#define CAN_TX_BUFFER_SIZE 96U
+#else
 #define CAN_RX_BUFFER_SIZE 4096U
 #define CAN_TX_BUFFER_SIZE 416U
+#endif
 
 #ifdef STM32H7
 // ITCM RAM and DTCM RAM are the fastest for Cortex-M7 core access
@@ -41,7 +44,7 @@ can_ring *can_queues[PANDA_CAN_CNT] = {&can_tx1_q, &can_tx2_q, &can_tx3_q};
 
 // ********************* interrupt safe queue *********************
 bool can_pop(can_ring *q, CANPacket_t *elem) {
-  bool ret = 0;
+  bool ret = false;
 
   ENTER_CRITICAL();
   if (q->w_ptr != q->r_ptr) {
@@ -51,7 +54,7 @@ bool can_pop(can_ring *q, CANPacket_t *elem) {
     } else {
       q->r_ptr += 1U;
     }
-    ret = 1;
+    ret = true;
   }
   EXIT_CRITICAL();
 
