@@ -180,7 +180,8 @@ common_flags += [f"-DHEALTH_PACKET_VERSION=0x{hh:08X}U", f"-DCAN_PACKET_VERSION_
 
 # panda fw
 build_project("panda_h7", base_project_h7, "./board/main.c", [])
-build_project("panda_f4", base_project_f4, "./board/main.c", [])
+# xnor: F4 (comma three/white/black) firmware no longer builds against upstream's H7-only board struct;
+# this fork runs a Comma Four (H7), so the F4 target is not built.
 
 # body fw
 build_project("body_h7", base_project_h7, "./board/body/main.c", ["-DPANDA_BODY"])
