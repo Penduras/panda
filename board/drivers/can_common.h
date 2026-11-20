@@ -140,24 +140,6 @@ void can_set_orientation(bool flipped) {
   bus_config[2].can_num_lookup = flipped ? 0U : 2U;
 }
 
-<<<<<<< HEAD
-#ifdef PANDA_JUNGLE
-void can_set_forwarding(uint8_t from, uint8_t to) {
-  bus_config[from].forwarding_bus = to;
-}
-#endif
-
-// xnor: ignition_can_hook itself now lives in opendbc/safety/ignition.h (included
-// above) - the opendbc_repo resync (commit 4bd93c02) already carries this fork's
-// Tesla Model S GTW_status exception plus a debounced VW MEB case and a body-v2
-// exception deliberately left disabled (conflicts with Tesla's own 0x222/0x201 CAN
-// IDs) that this file's own copy was missing. Redefining it here was a straight
-// ODR violation caught by the real scons build (arm-none-eabi-gcc, redefinition of
-// 'ignition_can_hook') - this file used to be its only home before ignition
-// detection got centralized into opendbc's safety layer upstream.
-
-=======
->>>>>>> 92eb565169
 bool can_tx_check_min_slots_free(uint32_t min) {
   return
     (can_slots_empty(&can_tx1_q) >= min) &&
