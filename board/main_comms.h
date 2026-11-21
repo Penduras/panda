@@ -50,8 +50,13 @@ static int get_health_pkt(void *dat) {
 
   health->sound_output_level_pkt = sound_output_level;
 
+#ifdef STM32H7
   float temperature_encoded = (CLAMP(dts_get_temperature(), -40.0f, 214.5f) + 40.0f) + 0.5f;
   health->temperature_pkt = (uint8_t)temperature_encoded;
+#else
+  // xnor: F4 has no die temperature sensor; encoded 0 C
+  health->temperature_pkt = 40U;
+#endif
 
   return sizeof(*health);
 }

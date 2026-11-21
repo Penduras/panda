@@ -54,8 +54,7 @@
 #include "board/stm32f4/clock.h"
 
 #if !defined(BOOTSTUB)
-  #include "board/drivers/uart.h"
-  #include "board/stm32f4/lluart.h"
+  #include "board/drivers/debug.h"
 #endif
 
 #ifdef BOOTSTUB
@@ -67,6 +66,7 @@
 #include "board/stm32f4/llusb.h"
 
 // unused
+uint16_t sound_output_level = 0U;
 void spi_init(void) {};
 void sound_tick(void) {};
 void can_tx_comms_resume_spi(void) {};

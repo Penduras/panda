@@ -34,7 +34,8 @@ ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
 enter_bootloader_mode = 0x2001FFFC;
-_estack = 0x2001FFFC;    /* end of 128K RAM on AHB bus*/
+fault_cookie = 0x2001FFF8;  /* xnor: survives NMI/HardFault reset, like the H7 */
+_estack = 0x2001FFF8;    /* end of 128K RAM on AHB bus, minus the two words above */
 _app_start = 0x08004000; /* Reserve Sector 0(16K) for bootloader */
 
 /* Generate a link error if heap and stack don't fit into RAM */

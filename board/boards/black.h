@@ -78,12 +78,6 @@ static void black_init(void) {
   black_set_usb_load_switch(true);
 }
 
-static void black_init_bootloader(void) {
-  // GPS OFF
-  set_gpio_output(GPIOC, 5, 0);
-  set_gpio_output(GPIOC, 12, 0);
-}
-
 static uint32_t black_read_voltage_mV(void){
   return adc_get_mV(&(const adc_signal_t) ADC_CHANNEL_DEFAULT(ADC1, 12)) * 11U;
 }
@@ -109,7 +103,6 @@ board board_black = {
   .avdd_mV = 3300U,
   .fan_enable_cooldown_time = 0U,
   .init = black_init,
-  .init_bootloader = black_init_bootloader,
   .enable_can_transceiver = black_enable_can_transceiver,
   .led_GPIO = {GPIOC, GPIOC, GPIOC},
   .led_pin = {9, 7, 6},
